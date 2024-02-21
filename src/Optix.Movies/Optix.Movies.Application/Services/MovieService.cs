@@ -31,7 +31,7 @@ public class MovieService(IMovieRepository movieRepository) : IMovieService
             movies = movies.Skip(skip).Take(take);
         }
 
-        return movies.Take(50);
+        return movies;
     }
 }
 

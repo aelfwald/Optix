@@ -12,7 +12,6 @@ internal static class DependConfigureOrm
 
         services.AddDbContext<MoviesDbContext>(options =>
         {
-
             string connectionString = configuration
                 .GetConnectionString("MoviesDatabase")!
                 .Replace("{AppDir}", AppDomain.CurrentDomain.BaseDirectory);
