@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Optix.Movies;
 
@@ -15,6 +17,7 @@ public static class DependencyInjection
     {
         services.AddTransient<IMovieService, MovieService>();
         services.AddTransient<IMovieRepository, MovieRepository>();
+        services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerGenOptions>();
     }
 }
 

@@ -11,7 +11,8 @@ namespace Optix.Movies;
 /// <param name="movieService">The movie service class</param>
 /// <param name="logger">The logger</param>
 [ApiController]
-[Route("api/movies")]
+[Route("v{version:apiVersion}/movies")]
+[ApiVersion("1.0")]
 public class MoviesController(
     IMovieService movieService,
     ILogger<MoviesController> logger) : ControllerBase

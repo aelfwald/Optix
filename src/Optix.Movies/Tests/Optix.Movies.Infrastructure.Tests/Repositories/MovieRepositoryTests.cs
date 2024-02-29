@@ -1,6 +1,9 @@
 using FluentAssertions;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Moq;
 using Moq.EntityFrameworkCore;
+using System.Numerics;
+using System.Text;
 using Xunit;
 
 namespace Optix.Movies;
@@ -16,7 +19,7 @@ public class MovieRepositoryTests
         new() { Title = "Toy Story", Genre = "Cartoon" },
         new() { Title = "Back To The Future", Genre = "Comedy" },
         new() { Title = "Jurassic Park", Genre = "Science Fiction" },
-        new() { Title = "By the Light of the Silvery Moon", Genre = "Romcom" },
+        new() { Title = "By The Light of the Silvery Moon", Genre = "Romcom" },
         new() { Title = "The Italian Job", Genre = "Caper" },
         new() { Title = "School For Scoundrels", Genre = "Comedy" },
         new() { Title = "Make Mine Minx", Genre = "Comedy" },
@@ -24,7 +27,7 @@ public class MovieRepositoryTests
     ];
 
     [Theory]
-	[InlineData("Local", 1)]
+    [InlineData("Local", 1)]
     [InlineData("PLANES", 1)]
     [InlineData("THE", 5)]
     [InlineData(" Job", 1)]
@@ -47,7 +50,6 @@ public class MovieRepositoryTests
 
 		//Assert
 		movies.Count().Should().Be(expectedCount);
-
     }
 
     [Theory]
@@ -79,13 +81,14 @@ public class MovieRepositoryTests
     }
 
     [Theory]
-    [InlineData("Planes", "Comedy", 1)]
-    [InlineData("", "", 11)]
-    [InlineData("PLANES, ", "COMEDY", 1)]
-    [InlineData("ne", "Comedy", 2)]
-    public async void Ensure_can_search_by_title_and_genre(
-            string title,
-            string genre,
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    [InlineData(null, 11)]
+    [InlineData(0, 0)]
+    [InlineData(11, 11)]
+    [InlineData(12, 11)]
+    public async void Ensure_search_limit_can_be_applied(
+            int? searchLimit,
             int expectedCount)
     {
 
@@ -98,11 +101,58 @@ public class MovieRepositoryTests
         var movieRepository = new MovieRepository(mockContext.Object);
 
         //Act
-        IEnumerable<Movie> movies = await movieRepository.SearchMovies(title: title, genre: genre);
+        IEnumerable<Movie> movies = await movieRepository.SearchMovies(searchLimit: searchLimit);
 
         //Assert
         movies.Count().Should().Be(expectedCount);
 
     }
+
+    public static IEnumerable<object[]> PagingTestParams
+    {
+        get
+        {
+            yield return new object[] 
+            {   
+                new PagingRequirements() { Page = 1 , PageSize = 1}, 
+                new List<string>() { "Local Hero"} 
+            };
+            yield return new object[]
+            {
+                new PagingRequirements() { Page = 2 , PageSize = 2},
+                new List<string>() { "The Terminator", "Toy Story"}
+            };
+            yield return new object[]
+            {
+                new PagingRequirements() { Page = 6 , PageSize = 2},
+                new List<string>() { "Planes, Trains and Automobiles" }
+            };
+        }
+    }
+
+    [Theory()]
+    [MemberData(nameof(PagingTestParams))]
+    public async void Ensure_paging_requirements_can_be_applied(
+        PagingRequirements pagingRequirements,
+        List<string> expectedMovies
+        )
+    {
+
+        //Arrange
+        var mockContext = new Mock<MoviesDbContext>();
+        mockContext
+            .Setup(x => x.Movies)
+            .ReturnsDbSet(_movieList);
+
+        var movieRepository = new MovieRepository(mockContext.Object);
+
+        //Act
+        IEnumerable<Movie> movies = await movieRepository.SearchMovies(pagingRequirements: pagingRequirements);
+
+        //Assert
+        movies.Select(m => m.Title).Should().BeEquivalentTo(expectedMovies);
+
+    }
+
 
 }

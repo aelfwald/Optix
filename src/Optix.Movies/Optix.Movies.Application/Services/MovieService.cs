@@ -15,23 +15,29 @@ public class MovieService(IMovieRepository movieRepository) : IMovieService
         int? pageSize = null,
         int? limit = null)
     {
-        IEnumerable<Movie> movies = await _movieRespository.SearchMovies(title, genre);
 
-        // Apply any search limit requested
-        if (limit.HasValue)
-        {
-            movies = movies.Take(limit.Value);
-        }
+        PagingRequirements? pagingRequirements = null;
 
         // Pagination
         if (page.HasValue)
         {
-            int take = pageSize ?? 10;
-            int skip = (page.Value - 1) * take;
-            movies = movies.Skip(skip).Take(take);
+            //Default page size to 10 if no page size provided
+            if (!pageSize.HasValue)
+            {
+                pageSize = 10;
+            }
+
+            pagingRequirements = new PagingRequirements()
+            {
+                Page = page.Value,
+                PageSize = pageSize.Value
+            };    
         }
 
-        return movies;
+        IEnumerable<Movie> movies = await _movieRespository.SearchMovies(
+            title, genre, limit, pagingRequirements);
+
+        return movies.Take(100);
     }
 }
 
